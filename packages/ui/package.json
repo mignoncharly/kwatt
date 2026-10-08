@@ -1,0 +1,7 @@
+{
+  "name": "@community/ui",
+  "private": true,
+  "exports": {
+    "./tokens.css": "./src/tokens.css"
+  }
+}

@@ -1,0 +1,12 @@
+community_platform_15_phase_plan.md
+docs/decisions/ADR-001-architecture.md
+docs/decisions/decision-log.md
+docs/phase-reports/phase-1.md
+docs/phase-reports/phase-2.md
+docs/product/**
+docs/ux/**
+tests/check_phase1_docs.mjs
+tests/check_phase2_ux.mjs
+pnpm-lock.yaml
+/sbom.json
+apps/web/next-env.d.ts

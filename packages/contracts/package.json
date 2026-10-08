@@ -1,0 +1,21 @@
+{
+  "name": "@community/contracts",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./health": {
+      "types": "./src/health.ts",
+      "import": "./dist/health.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

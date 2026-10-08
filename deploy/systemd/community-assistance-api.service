@@ -1,0 +1,30 @@
+[Unit]
+Description=Community Assistance API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=community-assistance
+Group=community-assistance
+WorkingDirectory=/srv/community-assistance/current
+EnvironmentFile=/etc/community-assistance/production.env
+ExecStart=/usr/bin/node apps/api/dist/server.js
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

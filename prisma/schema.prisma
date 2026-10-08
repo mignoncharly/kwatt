@@ -1,0 +1,17 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../apps/api/src/generated/prisma"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model BootstrapFixture {
+  key         String   @id
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("bootstrap_fixture")
+}

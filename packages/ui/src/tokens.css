@@ -1,0 +1,11 @@
+:root {
+  --color-ink: #18312b;
+  --color-surface: #ffffff;
+  --color-border: #d6dfdb;
+  --color-focus: #175e50;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --radius-control: 0.5rem;
+}

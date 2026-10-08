@@ -1,0 +1,47 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      DATABASE_URL: postgresql://community:ci-only-password@127.0.0.1:5432/community?schema=public
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up pnpm
+        uses: pnpm/action-setup@fe02b34f77f04d625c5d6c78c408fcb27f2d456c
+        with:
+          version: 11.20.0
+      - name: Set up Node.js
+        uses: actions/setup-node@1e60f620b9541d43753b8613feb302f5c6d060de
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate and generate Prisma client
+        run: pnpm db:validate && pnpm db:generate
+      - name: Run lint, format, typecheck, unit, integration and build checks
+        run: pnpm check
+      - name: Scan for committed secrets
+        run: pnpm security:secrets
+      - name: Audit dependencies
+        run: pnpm security:deps
+      - name: Install Chromium for end-to-end tests
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run browser tests
+        run: pnpm test:e2e
+      - name: Generate CycloneDX SBOM
+        run: pnpm sbom --sbom-format cyclonedx --out sbom.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sbom
+          path: sbom.json
+          if-no-files-found: error

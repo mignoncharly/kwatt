@@ -1,0 +1,16 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+allowBuilds:
+  '@prisma/engines': true
+  esbuild: true
+  libxmljs2: false
+  prisma: true
+overrides:
+  deepmerge-ts: 8.0.2
+  mysql2: 3.24.5
+minimumReleaseAgeExclude:
+  - '@playwright/test@1.64.0'
+  - playwright-core@1.64.0
+  - playwright@1.64.0
+  - concurrently@10.0.6

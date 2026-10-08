@@ -1,0 +1,55 @@
+{
+  "name": "community-assistance-platform",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": "11.20.0"
+  },
+  "scripts": {
+    "bootstrap": "node scripts/setup-local.mjs",
+    "dev": "pnpm --filter @community/config build && pnpm --filter @community/contracts build && concurrently --kill-others -n web,api,worker -c blue,green,yellow \"pnpm --filter @community/web dev\" \"pnpm --filter @community/api dev\" \"pnpm --filter @community/worker dev\"",
+    "build": "pnpm -r --if-present build",
+    "lint": "eslint apps packages tests/unit tests/integration tests/e2e scripts prisma.config.ts prisma/seed.ts eslint.config.mjs vitest.config.ts playwright.config.ts",
+    "typecheck": "pnpm -r --if-present typecheck && pnpm typecheck:tools",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:integration",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "security:deps": "pnpm audit --audit-level moderate",
+    "security:secrets": "node scripts/check-secrets.mjs",
+    "prepare": "husky",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "typecheck:tools": "tsc -p tsconfig.tools.json --noEmit"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.0",
+    "@prisma/adapter-pg": "7.10.0",
+    "@types/node": "24.19.0",
+    "@types/pg": "8.15.6",
+    "concurrently": "10.0.6",
+    "eslint": "10.12.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "pg": "8.23.1",
+    "prettier": "3.9.9",
+    "prisma": "7.10.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3",
+    "dotenv": "18.0.6"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml,css,html}": "prettier --write"
+  },
+  "type": "module"
+}
