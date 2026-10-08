@@ -1,6 +1,6 @@
 # Phase 3 handoff: repository, environments, and delivery pipeline
 
-**Status:** Native-service implementation updated; acceptance gate pending local database setup and remote CI  
+**Status:** Native-service implementation and remote CI complete; local database acceptance remains pending  
 **Scope:** Phase 3 only; Phase 4 has not started  
 **Specification:** `community_platform_15_phase_plan.md`
 
@@ -15,10 +15,12 @@
 - Added one infrastructure-only `bootstrap_fixture` migration and deterministic seed. Seed execution is limited to loopback databases named `community`. Phase 4 replaces this fixture with the product schema and authorization model.
 - Added staging/production environment templates with no credentials, a pinned-action GitHub CI workflow, moderate-severity dependency audit, high-confidence secret scan, and CycloneDX SBOM generation.
 - Updated dependency pins after the audit found vulnerable transitive packages. The audited lockfile now resolves patched versions and the moderate-or-higher audit is clean.
+- Fixed TypeScript workspace builds so package builds emit the JavaScript exports required by Next.js and the systemd runtime.
+- Initialized the supplied GitHub repository on `main`; added an install-time Husky permission repair so generated hooks run on this host.
 
 ## Files changed
 
-- Repository and tooling: `.gitignore`, `.npmrc`, `.prettierignore`, `.prettierrc.json`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `eslint.config.mjs`, `tsconfig.base.json`, `tsconfig.tools.json`, `vitest.config.ts`, `playwright.config.ts`, `.husky/pre-commit`.
+- Repository and tooling: `.gitignore`, `.npmrc`, `.prettierignore`, `.prettierrc.json`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `eslint.config.mjs`, TypeScript workspace configs, `tsconfig.base.json`, `tsconfig.tools.json`, `vitest.config.ts`, `playwright.config.ts`, `.husky/pre-commit`, and `scripts/ensure-git-hooks.mjs`.
 - CI and local operations: `.github/workflows/ci.yml`, `README.md`, `.env.example`, `.env.staging.example`, `.env.production.example`, `scripts/setup-local.mjs`, `scripts/check-secrets.mjs`.
 - Runtime packages: `apps/web/**`, `apps/api/**`, `apps/worker/**`, `packages/config/**`, `packages/contracts/**`, `packages/i18n/**`, and `packages/ui/**`.
 - Database setup: `prisma.config.ts`, `prisma/schema.prisma`, `prisma/migrations/migration_lock.toml`, `prisma/migrations/20261008120000_bootstrap_fixture/migration.sql`, and `prisma/seed.ts`.
@@ -29,7 +31,7 @@ The ignored local `.env`, dependency installation, build output, browser cache, 
 
 ## Checks performed
 
-Ran from `C:\\kwatt`:
+Earlier checks reported from `C:\\kwatt`:
 
 - `pnpm install --frozen-lockfile` — passed with pnpm 11.20.0.
 - `pnpm check` — passed. Prettier, ESLint, app and Prisma-tooling typechecks, package builds, and Next.js 16.4.0 production build all succeeded.
@@ -40,6 +42,16 @@ Ran from `C:\\kwatt`:
 - SBOM — generated and parsed as CycloneDX 1.7 with 448 components.
 - Live process checks — API `/healthz` returned 200 and `/readyz` returned a sanitized 503 while PostgreSQL was unavailable; worker `/healthz` returned 200.
 
+Checks in this workspace:
+
+- `corepack pnpm install --frozen-lockfile` — passed. Host Node is 22.23.1, so pnpm emitted the expected warning that the project requires Node 24.
+- `corepack pnpm format:check` and `corepack pnpm check` — passed under Node 22.23.1: formatting, lint, typechecks, package and Next.js builds, 6 unit tests, and 5 integration tests.
+- `corepack pnpm db:validate` and `corepack pnpm db:generate` — passed with Prisma 7.10.0.
+- `node scripts/check-secrets.mjs` — passed on the staged source.
+- Husky pre-commit — ran `lint-staged` and Prettier successfully for the follow-up commits.
+- GitHub Actions [CI run 37855395376](https://github.com/mignoncharly/kwatt/actions/runs/37855395376) — passed on Node 24: install, Prisma validation/generation, lint/typecheck/build/unit/integration checks, secret scan, moderate-severity audit, Chromium install, browser test, CycloneDX SBOM generation, and artifact upload. Runtime: 1m19s.
+- `corepack pnpm db:migrate:dev` — blocked with Prisma P1000 because the generated `community` database password has not been provisioned in the host PostgreSQL role. The seed and live readiness checks were therefore not run here.
+
 ## Security, privacy, and risks
 
 The systemd and Nginx files are templates only; no host configuration was installed or changed. PostgreSQL and Redis remain private services. Hosting provider, EU region, domain, certificates, and secret storage still require owner selection. D-012 defers external messaging providers. Fastify request logging stays disabled, and the Nginx access format omits query strings.
@@ -48,13 +60,11 @@ No product-domain tables, authentication, user workflows, provider integrations,
 
 ## Acceptance gate and remaining manual work
 
-Earlier code-level checks and security scans passed in the prior Node 24 workspace. They have not been repeated in this checkout. The Phase 3 gate is **not yet satisfied**:
+Remote CI is green and the source is pushed to the supplied `origin/main`. The full host bootstrap gate remains **pending**:
 
-- This host has systemd, Nginx, PostgreSQL, and Redis active. PostgreSQL accepts connections, but the current account has no matching database role and needs an administrator to create the local role/database. Redis requires authentication; a dedicated local credential must be provisioned and placed in ignored `.env`.
-- The current host runs Node 22.23.0, below the pinned Node 24.19.x. Remote CI must confirm the pinned runtime path.
-- The supplied GitHub repository was empty and this workspace had no `.git` directory. Initialize and push the reviewed source to the supplied remote; then confirm its CI workflow is green.
+- This host has systemd, Nginx, PostgreSQL, and Redis active. PostgreSQL accepts connections, but the current account cannot provision the generated database role; `db:migrate:dev` returned P1000. Redis requires authentication, and an administrator must provision a dedicated local ACL user and place its URL in ignored `.env`.
+- Node 22.23.1 is installed on this host; the repository requires Node 24.19.x. The GitHub workflow verified the pinned Node 24 path.
+- After database and Redis credentials are provisioned, run the migration and seed sequence, start web/API/worker, and verify their health and readiness endpoints. Do not start Phase 4 before this host bootstrap gate passes.
 
-The root README now documents host-native setup. After a local administrator provisions the database role and Redis credentials, run migrations, seed, start the app services, and verify readiness. Do not start Phase 4 before those gate checks pass.
-
-**Deployment or external services:** none. No system packages, Nginx configuration, systemd units, or production services were changed on the host.  
-**Readiness:** Native deployment templates are in place; acceptance and Phase 4 readiness remain pending database/Redis setup and remote CI verification.
+**Deployment:** Nginx and systemd configurations are templates only. No host packages, `/etc` files, app services, or production deployment were changed. Source was pushed to GitHub and CI completed successfully.  
+**Readiness:** Remote CI gate passed; local database migration, seed, and live readiness remain pending host-admin setup.
